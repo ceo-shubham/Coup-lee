@@ -22,10 +22,24 @@ const PORT = process.env.PORT || 4000;
 const rawOrigins = process.env.CLIENT_ORIGIN || '*';
 const allowedOrigins = rawOrigins.split(',').map((o) => o.trim());
 
+const defaultOrigins = [
+  'https://coup-lee.zenstro.space',
+  'https://coup-le.ceoshubham.workers.dev',
+  'http://localhost:5173',
+  'http://localhost:4000',
+];
+
 // CORS origin resolver that respects credentials: true with wildcard support
 const corsOriginHandler = (origin, callback) => {
   // Allow requests with no origin (like mobile apps, curl, or same-origin)
-  if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+  if (
+    !origin ||
+    allowedOrigins.includes('*') ||
+    allowedOrigins.includes(origin) ||
+    defaultOrigins.includes(origin) ||
+    origin.endsWith('.zenstro.space') ||
+    origin.endsWith('.workers.dev')
+  ) {
     return callback(null, true);
   }
   return callback(new Error(`Origin ${origin} not allowed by CORS`));
