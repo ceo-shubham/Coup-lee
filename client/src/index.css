@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background: radial-gradient(circle at 50% 20%, #2a0815 0%, #15030b 50%, #080104 100%);
+    background-attachment: fixed;
+    color: #fdf2f4;
+  }
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(30, 8, 18, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(244, 63, 94, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+}
+
+.glass-panel-glow {
+  background: rgba(38, 10, 22, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(251, 113, 133, 0.25);
+  box-shadow: 0 10px 40px -10px rgba(244, 63, 94, 0.35);
+}
+
+.glass-input {
+  background: rgba(20, 4, 11, 0.6);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  border-color: rgba(244, 63, 94, 0.6);
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
+  outline: none;
+}
+
+/* Romantic Vinyl Record Styling */
+.vinyl-grooves {
+  background: radial-gradient(
+    circle,
+    #18181b 0%,
+    #09090b 20%,
+    #18181b 25%,
+    #09090b 35%,
+    #18181b 45%,
+    #09090b 55%,
+    #18181b 65%,
+    #09090b 75%,
+    #18181b 85%,
+    #09090b 100%
+  );
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(244, 63, 94, 0.2);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 4, 8, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.6);
+}
+
+/* Subtle Shimmer Effect */
+@keyframes romanticShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.romantic-shimmer {
+  background: linear-gradient(90deg, #f43f5e, #fb7185, #f43f5e);
+  background-size: 200% 100%;
+  animation: romanticShimmer 3s ease-in-out infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
