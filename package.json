@@ -5,12 +5,12 @@
   "description": "Coup-le - Romantic Real-time Synchronized Music & Video listening web app for couples",
   "scripts": {
     "start": "node server/index.js",
-    "build": "npm run build --prefix client",
+    "build": "npm --prefix server install && npm --prefix client install && npm --prefix client run build",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && node index.js",
     "dev:client": "cd client && npm run dev",
-    "build:client": "cd client && npm run build",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build:client": "npm --prefix client install && npm --prefix client run build",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
     "deploy": "wrangler deploy",
     "preview": "wrangler dev"
   },
