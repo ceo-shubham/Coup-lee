@@ -91,14 +91,22 @@ export function useSocket() {
   // Actions
   const createRoom = useCallback((user) => {
     return new Promise((resolve, reject) => {
-      if (!socketRef.current) return reject(new Error('Socket not connected'));
+      if (!socketRef.current) return reject(new Error('Socket not initialized'));
+
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Server took too long to connect. Please check server status or retry in a few seconds.'));
+      }, 7000);
+
       socketRef.current.emit('room:create', { user }, (response) => {
-        if (response.error) {
+        clearTimeout(timeoutId);
+        if (response?.error) {
           reject(new Error(response.error));
-        } else {
+        } else if (response?.room) {
           setRoom(response.room);
           setMessages(response.room.messages || []);
           resolve(response.room);
+        } else {
+          reject(new Error('Failed to create room'));
         }
       });
     });
@@ -106,14 +114,22 @@ export function useSocket() {
 
   const joinRoom = useCallback((roomId, user) => {
     return new Promise((resolve, reject) => {
-      if (!socketRef.current) return reject(new Error('Socket not connected'));
+      if (!socketRef.current) return reject(new Error('Socket not initialized'));
+
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Server took too long to connect. Please retry in a few seconds.'));
+      }, 7000);
+
       socketRef.current.emit('room:join', { roomId, user }, (response) => {
-        if (response.error) {
+        clearTimeout(timeoutId);
+        if (response?.error) {
           reject(new Error(response.error));
-        } else {
+        } else if (response?.room) {
           setRoom(response.room);
           setMessages(response.room.messages || []);
           resolve(response.room);
+        } else {
+          reject(new Error('Failed to join room'));
         }
       });
     });
