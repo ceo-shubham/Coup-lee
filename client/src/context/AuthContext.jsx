@@ -3,8 +3,8 @@ import { GoogleOAuthProvider, googleLogout } from '@react-oauth/google';
 
 const AuthContext = createContext(null);
 
-// Get Google Client ID from environment
-const rawGoogleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+// Get Google Client ID from environment with default fallback
+const rawGoogleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '193810371236-rf2n214p38hv69uh6c2ethmkamsckfff.apps.googleusercontent.com';
 const isGoogleConfigured = Boolean(
   rawGoogleClientId && rawGoogleClientId.trim().length > 10
 );
