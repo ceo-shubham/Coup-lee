@@ -14,7 +14,7 @@ export function AudioSyncPlayer({
   isMuted,
 }) {
   const audioRef = useRef(null);
-  const isSyncingRef = useRef(false);
+  const suppressEventsUntilRef = useRef(Date.now() + 3000);
   const [duration, setDuration] = useState(0);
 
   // When track changes, update src
@@ -26,11 +26,20 @@ export function AudioSyncPlayer({
       ? track.url
       : `${SERVER_URL}${track.url || ''}`;
 
+    suppressEventsUntilRef.current = Date.now() + 3000;
     audio.src = streamUrl;
     audio.load();
 
-    if (playback?.currentTime) {
-      audio.currentTime = playback.currentTime;
+    let targetTime = playback?.currentTime || 0;
+    if (playback?.isPlaying && playback?.lastUpdated) {
+      const elapsed = (Date.now() - playback.lastUpdated) / 1000;
+      if (elapsed > 0 && elapsed < 7200) {
+        targetTime += elapsed;
+      }
+    }
+
+    if (targetTime > 0.5) {
+      audio.currentTime = targetTime;
     }
 
     if (playback?.isPlaying) {
@@ -44,13 +53,22 @@ export function AudioSyncPlayer({
   useEffect(() => {
     if (!audioRef.current || !playback) return;
     const audio = audioRef.current;
-    const drift = Math.abs(audio.currentTime - (playback.currentTime || 0));
 
-    isSyncingRef.current = true;
+    let targetTime = playback.currentTime || 0;
+    if (playback.isPlaying && playback.lastUpdated) {
+      const elapsed = (Date.now() - playback.lastUpdated) / 1000;
+      if (elapsed > 0 && elapsed < 10) {
+        targetTime += elapsed;
+      }
+    }
 
-    // Correct drift if more than 0.5s
-    if (drift > 0.5) {
-      audio.currentTime = playback.currentTime;
+    const drift = Math.abs(audio.currentTime - targetTime);
+
+    suppressEventsUntilRef.current = Date.now() + 1200;
+
+    // Correct drift if more than 2 seconds (smooth sync without stutter)
+    if (drift > 2.0) {
+      audio.currentTime = targetTime;
     }
 
     if (playback.isPlaying && audio.paused) {
@@ -58,10 +76,6 @@ export function AudioSyncPlayer({
     } else if (!playback.isPlaying && !audio.paused) {
       audio.pause();
     }
-
-    setTimeout(() => {
-      isSyncingRef.current = false;
-    }, 300);
   }, [playback, lastSyncEvent]);
 
   // Volume & Mute
@@ -72,12 +86,12 @@ export function AudioSyncPlayer({
   }, [volume, isMuted]);
 
   const handlePlay = () => {
-    if (isSyncingRef.current || !audioRef.current) return;
+    if (Date.now() < suppressEventsUntilRef.current || !audioRef.current) return;
     onPlaybackChange(true, audioRef.current.currentTime);
   };
 
   const handlePause = () => {
-    if (isSyncingRef.current || !audioRef.current) return;
+    if (Date.now() < suppressEventsUntilRef.current || !audioRef.current) return;
     onPlaybackChange(false, audioRef.current.currentTime);
   };
 

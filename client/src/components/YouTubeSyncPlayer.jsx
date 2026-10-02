@@ -35,7 +35,7 @@ export function YouTubeSyncPlayer({
   const containerRef = useRef(null);
   const playerRef = useRef(null);
   const isReadyRef = useRef(false);
-  const isSyncingRef = useRef(false);
+  const suppressEventsUntilRef = useRef(Date.now() + 4000);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [playerError, setPlayerError] = useState(null);
 
@@ -48,6 +48,8 @@ export function YouTubeSyncPlayer({
     let isMounted = true;
     setIsVideoLoading(true);
     setPlayerError(null);
+    // Lock broadcast events for 4 seconds during new track load & buffer
+    suppressEventsUntilRef.current = Date.now() + 4000;
 
     loadYouTubeApi().then((YT) => {
       if (!isMounted || !containerRef.current) return;
@@ -80,18 +82,35 @@ export function YouTubeSyncPlayer({
             setIsVideoLoading(false);
             event.target.setVolume(isMuted ? 0 : volume * 100);
 
-            // Initial seek & state sync
-            if (playback?.currentTime) {
-              event.target.seekTo(playback.currentTime, true);
+            // First match track time smoothly with room before playing
+            let targetStartTime = playback?.currentTime || 0;
+            if (playback?.isPlaying && playback?.lastUpdated) {
+              const elapsed = (Date.now() - playback.lastUpdated) / 1000;
+              if (elapsed > 0 && elapsed < 7200) {
+                targetStartTime += elapsed;
+              }
             }
+
+            if (targetStartTime > 0.5) {
+              event.target.seekTo(targetStartTime, true);
+            }
+
             if (playback?.isPlaying) {
               event.target.playVideo();
             } else {
               event.target.pauseVideo();
             }
+
+            // Keep events locked until initial track sync is stable
+            suppressEventsUntilRef.current = Date.now() + 2500;
           },
           onStateChange: (event) => {
-            if (!isMounted || isSyncingRef.current) return;
+            if (!isMounted) return;
+
+            // Prevent ping-pong loop when player is responding to remote sync or initialization
+            if (Date.now() < suppressEventsUntilRef.current) {
+              return;
+            }
 
             const state = event.data;
             const currentTime = playerRef.current?.getCurrentTime() || 0;
@@ -139,17 +158,27 @@ export function YouTubeSyncPlayer({
 
     const player = playerRef.current;
     const currentLocalTime = player.getCurrentTime ? player.getCurrentTime() : 0;
-    const targetTime = playback.currentTime || 0;
+
+    // Calculate actual target time including transit elapsed time
+    let targetTime = playback.currentTime || 0;
+    if (playback.isPlaying && playback.lastUpdated) {
+      const elapsed = (Date.now() - playback.lastUpdated) / 1000;
+      if (elapsed > 0 && elapsed < 10) {
+        targetTime += elapsed;
+      }
+    }
+
     const drift = Math.abs(currentLocalTime - targetTime);
 
-    isSyncingRef.current = true;
+    // Lock local events so this programmatic adjustment doesn't bounce back to partner
+    suppressEventsUntilRef.current = Date.now() + 1500;
 
-    // Correct drift if more than 1.2s
-    if (drift > 1.2 && typeof player.seekTo === 'function') {
+    // Only seek if drift is noticeably apart (> 2.5 seconds) to avoid constant stutter-replay
+    if (drift > 2.5 && typeof player.seekTo === 'function') {
       player.seekTo(targetTime, true);
     }
 
-    // Sync play/pause
+    // Sync play/pause state
     const playerState = player.getPlayerState ? player.getPlayerState() : -1;
     if (playback.isPlaying && playerState !== 1) {
       if (typeof player.playVideo === 'function') {
@@ -160,10 +189,6 @@ export function YouTubeSyncPlayer({
         player.pauseVideo();
       }
     }
-
-    setTimeout(() => {
-      isSyncingRef.current = false;
-    }, 400);
   }, [playback, lastSyncEvent]);
 
   // Volume & Mute sync (local preference)
