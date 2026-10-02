@@ -52,7 +52,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  maxHttpBufferSize: 1e8, // 100MB max payload
+  maxHttpBufferSize: 2e8, // 200MB max payload
 });
 
 app.use(cors({ origin: corsOriginHandler, credentials: true }));
@@ -72,7 +72,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 150 * 1024 * 1024 }, // 150MB limit per audio file
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB limit per audio file
   fileFilter: (req, file, cb) => {
     const allowedMimes = [
       'audio/mpeg',

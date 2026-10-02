@@ -73,10 +73,15 @@ export function AddMediaModal({ isOpen, onClose, onAddTrack, roomId, currentUser
     onClose();
   };
 
-  // Handle File Selection
+  // Handle File Selection (Max 200MB)
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 200 * 1024 * 1024) {
+        setUploadError('File size exceeds the 200MB limit. Please choose an audio under 200MB.');
+        setSelectedFile(null);
+        return;
+      }
       setSelectedFile(file);
       setUploadTitle(file.name.replace(/\.[^/.]+$/, ''));
       setUploadError('');
@@ -280,7 +285,7 @@ export function AddMediaModal({ isOpen, onClose, onAddTrack, roomId, currentUser
                 {selectedFile ? selectedFile.name : 'Click to select or drop an audio file'}
               </p>
               <p className="text-[11px] text-rose-300/70">
-                Supports MP3, WAV, AAC, M4A, FLAC (any size)
+                Supports MP3, WAV, AAC, M4A, FLAC (Max 200MB)
               </p>
             </div>
 
