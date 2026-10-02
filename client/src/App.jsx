@@ -183,7 +183,7 @@ export function App() {
 
   // 3. In-Room Main Experience
   return (
-    <div className="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+    <div className="h-screen h-[100dvh] max-h-[100dvh] flex flex-col justify-between relative overflow-hidden select-none">
       {/* Floating Hearts & Confetti FX */}
       <FloatingHearts reactions={reactions} />
 
@@ -195,10 +195,10 @@ export function App() {
         isWakeLocked={isWakeLocked}
       />
 
-      {/* Main Player Display Area */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-4xl mx-auto w-full">
+      {/* Main Player Display Area (One-Frame Responsive Fit) */}
+      <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-3 py-1 sm:py-2 max-w-4xl mx-auto w-full overflow-hidden">
         {currentTrack?.type === 'youtube' && showVideo ? (
-          <div className="w-full flex flex-col items-center gap-4">
+          <div className="w-full flex flex-col items-center gap-2 sm:gap-3 max-h-full">
             <YouTubeSyncPlayer
               track={currentTrack}
               playback={room.playback}
@@ -209,19 +209,19 @@ export function App() {
               isMuted={isMuted}
             />
 
-            <div className="flex items-center justify-between w-full px-2">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white truncate max-w-md">
+            <div className="flex items-center justify-between w-full px-2 max-w-2xl">
+              <div className="min-w-0 mr-2">
+                <h3 className="text-sm sm:text-base font-bold text-white truncate max-w-xs sm:max-w-md">
                   {currentTrack.title}
                 </h3>
-                <p className="text-xs text-rose-300/80">
+                <p className="text-[11px] sm:text-xs text-rose-300/80 truncate">
                   {currentTrack.artist} • Added by {currentTrack.addedBy?.name || 'Partner'}
                 </p>
               </div>
 
               <button
                 onClick={() => setShowVideo(false)}
-                className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-xs text-rose-200 transition-colors"
+                className="px-2.5 py-1 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-[11px] text-rose-200 transition-colors flex-shrink-0"
               >
                 🎵 Switch to Vinyl
               </button>
@@ -253,7 +253,7 @@ export function App() {
       </main>
 
       {/* Media Controls Bar */}
-      <footer className="sticky bottom-0 z-40 w-full">
+      <footer className="w-full flex-shrink-0 z-40">
         <MediaControls
           isPlaying={isPlaying}
           currentTime={localCurrentTime}

@@ -52,10 +52,10 @@ export function MediaControls({
   };
 
   return (
-    <div className="w-full glass-panel-glow border-t border-rose-500/30 p-4 sm:p-5 rounded-t-3xl max-w-5xl mx-auto">
+    <div className="w-full glass-panel-glow border-t border-rose-500/30 px-3 sm:px-5 py-2 sm:py-3 rounded-t-2xl sm:rounded-t-3xl max-w-4xl mx-auto select-none">
       {/* Progress Scrubber */}
-      <div className="w-full flex items-center gap-3 mb-4">
-        <span className="text-xs font-mono text-rose-300/80 w-10 text-right">
+      <div className="w-full flex items-center gap-2 sm:gap-3 mb-2 sm:mb-2.5">
+        <span className="text-[11px] sm:text-xs font-mono text-rose-300/80 w-8 sm:w-10 text-right">
           {formatTime(currentDisplayTime)}
         </span>
 
@@ -85,26 +85,27 @@ export function MediaControls({
           />
         </div>
 
-        <span className="text-xs font-mono text-rose-300/80 w-10">
+        <span className="text-[11px] sm:text-xs font-mono text-rose-300/80 w-8 sm:w-10">
           {formatTime(duration)}
         </span>
       </div>
 
-      {/* Action Buttons & Volume */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
+      {/* Action Buttons & Volume (Single tight row on both mobile & desktop) */}
+      <div className="flex items-center justify-between gap-1.5 sm:gap-3">
         {/* Left: Quick Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={onOpenAddModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-xs sm:text-sm shadow-glow-pink transition-all active:scale-95"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-xs sm:text-sm shadow-glow-pink transition-all active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            <span>Add Track</span>
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Add</span>
+            <span className="hidden sm:inline"> Track</span>
           </button>
 
           <button
             onClick={onToggleQueue}
-            className="p-2.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-rose-200 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-rose-200 hover:text-white transition-colors"
             title="Shared Queue"
           >
             <ListMusic className="w-4 h-4" />
@@ -112,7 +113,7 @@ export function MediaControls({
 
           <button
             onClick={onToggleChat}
-            className="relative p-2.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-rose-200 hover:text-white transition-colors"
+            className="relative p-1.5 sm:p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-rose-200 hover:text-white transition-colors"
             title="Love Whispers & Chat"
           >
             <MessageCircleHeart className="w-4 h-4" />
@@ -125,42 +126,42 @@ export function MediaControls({
         </div>
 
         {/* Center: Main Playback Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onTogglePlay}
             disabled={!hasTrack}
-            className="w-12 h-12 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 text-white flex items-center justify-center shadow-glow-pink disabled:opacity-40 disabled:hover:scale-100 transform hover:scale-105 active:scale-95 transition-all"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 text-white flex items-center justify-center shadow-glow-pink disabled:opacity-40 disabled:hover:scale-100 transform hover:scale-105 active:scale-95 transition-all flex-shrink-0"
           >
             {isPlaying ? (
-              <Pause className="w-5 h-5 fill-white" />
+              <Pause className="w-4 h-4 sm:w-5 sm:h-5 fill-white" />
             ) : (
-              <Play className="w-5 h-5 fill-white ml-0.5" />
+              <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white ml-0.5" />
             )}
           </button>
 
           <button
             onClick={onNextTrack}
             disabled={!hasTrack}
-            className="p-3 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-rose-200 hover:text-white disabled:opacity-40 transition-all active:scale-95"
+            className="p-2 sm:p-2.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-rose-200 hover:text-white disabled:opacity-40 transition-all active:scale-95"
             title="Next Track"
           >
-            <SkipForward className="w-4 h-4" />
+            <SkipForward className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
           <button
             onClick={onSendHeart}
-            className="p-3 rounded-xl bg-gradient-to-r from-rose-600/30 to-pink-600/30 hover:from-rose-600/50 hover:to-pink-600/50 border border-rose-500/40 text-rose-300 hover:text-white transition-all active:scale-90"
+            className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-rose-600/30 to-pink-600/30 hover:from-rose-600/50 hover:to-pink-600/50 border border-rose-500/40 text-rose-300 hover:text-white transition-all active:scale-90"
             title="Send Heart to Partner ❤️"
           >
-            <Heart className="w-4 h-4 fill-rose-500 text-rose-500 animate-pulse" />
+            <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-rose-500 text-rose-500 animate-pulse" />
           </button>
         </div>
 
         {/* Right: Personal Volume Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="p-2 text-rose-300 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 text-rose-300 hover:text-white transition-colors"
             title={isMuted ? 'Unmute' : 'Mute'}
           >
             {isMuted || volume === 0 ? (
@@ -180,7 +181,7 @@ export function MediaControls({
               setVolume(Number(e.target.value));
               if (isMuted) setIsMuted(false);
             }}
-            className="w-20 sm:w-24 accent-rose-500 h-1 bg-rose-950/80 rounded-lg cursor-pointer"
+            className="w-14 sm:w-20 md:w-24 accent-rose-500 h-1 bg-rose-950/80 rounded-lg cursor-pointer hidden xs:inline-block"
           />
         </div>
       </div>

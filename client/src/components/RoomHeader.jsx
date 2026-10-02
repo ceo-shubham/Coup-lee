@@ -40,73 +40,73 @@ export function RoomHeader({ room, currentUser, onLeaveRoom, isWakeLocked }) {
   const otherUsers = room?.users?.filter((u) => u.socketId !== currentUser?.id && u.user?.name !== currentUser?.name) || [];
 
   return (
-    <header className="w-full glass-panel border-b border-rose-500/20 px-4 sm:px-6 py-3 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+    <header className="w-full glass-panel border-b border-rose-500/20 px-3 sm:px-6 py-2 sm:py-2.5 flex-shrink-0 z-40">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Branding & Numeric Code */}
-        <div className="flex items-center justify-between w-full md:w-auto gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-600 to-pink-500 flex items-center justify-center shadow-glow-pink">
-              <Heart className="w-4 h-4 text-white fill-white" />
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-rose-600 to-pink-500 flex items-center justify-center shadow-glow-pink">
+              <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white fill-white" />
             </div>
-            <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">
+            <span className="font-extrabold text-base sm:text-lg tracking-tight text-white hidden xs:inline">
               Coup<span className="text-rose-500">-</span>le
             </span>
           </div>
 
           {/* Numeric Room Code Badge */}
-          <div className="flex items-center gap-1.5 bg-rose-950/60 border border-rose-500/40 rounded-xl px-3 py-1.5">
-            <span className="text-[10px] uppercase font-bold text-rose-300/80 tracking-wider">Room:</span>
-            <span className="font-mono font-bold text-sm sm:text-base text-white tracking-widest">{room?.id}</span>
+          <div className="flex items-center gap-1 sm:gap-1.5 bg-rose-950/60 border border-rose-500/40 rounded-xl px-2 sm:px-3 py-1">
+            <span className="text-[9px] sm:text-[10px] uppercase font-bold text-rose-300/80 tracking-wider">Room:</span>
+            <span className="font-mono font-bold text-xs sm:text-sm md:text-base text-white tracking-widest">{room?.id}</span>
             <button
               onClick={copyCode}
-              className="ml-1 p-1 hover:bg-rose-800/40 rounded-lg text-rose-300 transition-colors"
+              className="p-0.5 sm:p-1 hover:bg-rose-800/40 rounded text-rose-300 transition-colors"
               title="Copy 6-Digit Code"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
             <button
               onClick={copyInviteLink}
-              className="p-1 hover:bg-rose-800/40 rounded-lg text-rose-300 transition-colors"
+              className="p-0.5 sm:p-1 hover:bg-rose-800/40 rounded text-rose-300 transition-colors hidden sm:inline-block"
               title="Copy Direct Invite Link"
             >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+              {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Share2 className="w-3 h-3" />}
             </button>
           </div>
         </div>
 
         {/* Center: Together Duration & Partner Presence */}
-        <div className="flex items-center gap-3 flex-wrap justify-center">
+        <div className="flex items-center gap-2 sm:gap-3 justify-center min-w-0">
           {/* Together timer */}
           {room?.users?.length >= 2 ? (
-            <div className="flex items-center gap-1.5 bg-rose-500/15 border border-rose-500/30 rounded-full px-3 py-1 text-xs text-rose-200">
-              <Clock className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-              <span>Together: </span>
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-rose-500/15 border border-rose-500/30 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs text-rose-200">
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400 animate-pulse flex-shrink-0" />
+              <span className="hidden sm:inline">Together: </span>
               <span className="font-mono font-bold text-pink-300">{formatTime(togetherSeconds)}</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 bg-rose-950/40 border border-rose-800/30 rounded-full px-3 py-1 text-xs text-rose-300/80 animate-pulse">
-              <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-              <span>Waiting for partner (Share code: {room?.id})</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-rose-950/40 border border-rose-800/30 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs text-rose-300/80 animate-pulse truncate">
+              <Sparkles className="w-3 h-3 text-rose-400 flex-shrink-0" />
+              <span className="truncate">Waiting for partner</span>
             </div>
           )}
 
           {/* Connected User Avatars */}
-          <div className="flex items-center -space-x-2">
+          <div className="flex items-center -space-x-1.5 sm:-space-x-2 flex-shrink-0">
             {room?.users?.map((u, i) => (
               <div key={i} className="relative group" title={`${u.user?.name} (${u.isCreator ? 'Host' : 'Partner'})`}>
                 <img
                   src={u.user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.user?.name || 'User')}`}
                   alt={u.user?.name}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-rose-400 bg-rose-900"
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-rose-400 bg-rose-900"
                 />
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border border-black rounded-full" />
+                <span className="absolute bottom-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-400 border border-black rounded-full" />
               </div>
             ))}
           </div>
         </div>
 
         {/* Right: WakeLock badge & Leave button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {isWakeLocked && (
             <div
               className="hidden lg:flex items-center gap-1 bg-emerald-950/40 border border-emerald-500/30 rounded-xl px-2.5 py-1 text-[11px] text-emerald-300"
@@ -119,10 +119,10 @@ export function RoomHeader({ room, currentUser, onLeaveRoom, isWakeLocked }) {
 
           <button
             onClick={onLeaveRoom}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-xs font-semibold text-rose-200 transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-xs font-semibold text-rose-200 transition-all active:scale-95 shadow-sm"
           >
-            <LogOut className="w-3.5 h-3.5 text-rose-400" />
-            <span>Leave</span>
+            <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400" />
+            <span className="hidden xs:inline">Leave</span>
           </button>
         </div>
       </div>

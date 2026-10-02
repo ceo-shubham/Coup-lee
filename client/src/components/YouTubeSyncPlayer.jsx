@@ -205,7 +205,7 @@ export function YouTubeSyncPlayer({
   }, [volume, isMuted]);
 
   return (
-    <div className="relative w-full aspect-video max-h-[460px] rounded-2xl overflow-hidden glass-panel-glow border border-rose-500/30 shadow-2xl bg-black">
+    <div className="relative w-full aspect-video max-h-[38vh] max-w-2xl mx-auto rounded-2xl overflow-hidden glass-panel-glow border border-rose-500/30 shadow-2xl bg-black">
       <div ref={containerRef} className="w-full h-full" />
 
       {isVideoLoading && !playerError && (
