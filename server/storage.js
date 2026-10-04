@@ -17,26 +17,26 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 // Map tracking roomId -> Set of uploaded filenames for EPHEMERAL cleanup
-const roomFilesMap = new Map();
+const B2_KEY_ID = process.env.B2_APPLICATION_KEY_ID || '0050ce468f0de3b0000000001';
+const B2_APP_KEY = process.env.B2_APPLICATION_KEY || 'K005n45/Ku1QhgCeG2qBCCzyurjLeu4';
+const B2_BUCKET = process.env.B2_BUCKET_NAME || 'coup-lee';
+const B2_ENDPOINT = process.env.B2_ENDPOINT || 'https://s3.us-east-005.backblazeb2.com';
+const B2_REGION = process.env.B2_REGION || 'us-east-005';
+const DEFAULT_ADMIN_EMAIL = 'ceo.shubhampathak@gmail.com';
 
-// Optional Backblaze B2 client configuration
-const isB2Configured = Boolean(
-  process.env.B2_APPLICATION_KEY_ID &&
-  process.env.B2_APPLICATION_KEY &&
-  process.env.B2_BUCKET_NAME
-);
+const isB2Configured = Boolean(B2_KEY_ID && B2_APP_KEY && B2_BUCKET);
 
 let s3Client = null;
 if (isB2Configured) {
   s3Client = new S3Client({
-    endpoint: process.env.B2_ENDPOINT || 'https://s3.us-east-005.backblazeb2.com',
-    region: process.env.B2_REGION || 'us-east-005',
+    endpoint: B2_ENDPOINT,
+    region: B2_REGION,
     credentials: {
-      accessKeyId: process.env.B2_APPLICATION_KEY_ID,
-      secretAccessKey: process.env.B2_APPLICATION_KEY,
+      accessKeyId: B2_KEY_ID,
+      secretAccessKey: B2_APP_KEY,
     },
   });
-  console.log('[Storage] Backblaze B2 storage initialized');
+  console.log(`[Storage] Backblaze B2 storage initialized (Bucket: ${B2_BUCKET})`);
 } else {
   console.log('[Storage] Local storage initialized (B2 credentials optional)');
 }
@@ -62,7 +62,7 @@ async function syncLibraryManifestToB2() {
   try {
     const manifestJson = JSON.stringify(libraryTracks, null, 2);
     const command = new PutObjectCommand({
-      Bucket: process.env.B2_BUCKET_NAME,
+      Bucket: B2_BUCKET,
       Key: 'library/manifest.json',
       Body: manifestJson,
       ContentType: 'application/json',
@@ -78,7 +78,7 @@ async function restoreLibraryFromB2() {
   if (!isB2Configured || !s3Client) return;
   try {
     const command = new GetObjectCommand({
-      Bucket: process.env.B2_BUCKET_NAME,
+      Bucket: B2_BUCKET,
       Key: 'library/manifest.json',
     });
     const res = await s3Client.send(command);
@@ -106,7 +106,7 @@ restoreLibraryFromB2();
  * 3. If other user and > 50MB -> EPHEMERAL (Auto-deleted when room closes).
  */
 export async function registerFile(file, roomId, meta = {}) {
-  const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
+  const adminEmail = (process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL).toLowerCase().trim();
   const uploaderEmail = (meta.userEmail || '').toLowerCase().trim();
 
   const isUploaderAdmin = Boolean(adminEmail && uploaderEmail && uploaderEmail === adminEmail);
@@ -123,7 +123,7 @@ export async function registerFile(file, roomId, meta = {}) {
       try {
         const fileStream = fs.createReadStream(file.path);
         const command = new PutObjectCommand({
-          Bucket: process.env.B2_BUCKET_NAME,
+          Bucket: B2_BUCKET,
           Key: `library/${file.filename}`,
           Body: fileStream,
           ContentType: file.mimetype,
@@ -170,7 +170,7 @@ export async function registerFile(file, roomId, meta = {}) {
       try {
         const fileStream = fs.createReadStream(file.path);
         const command = new PutObjectCommand({
-          Bucket: process.env.B2_BUCKET_NAME,
+          Bucket: B2_BUCKET,
           Key: `rooms/${roomId}/${file.filename}`,
           Body: fileStream,
           ContentType: file.mimetype,
@@ -223,7 +223,7 @@ export async function cleanupRoomFiles(roomId) {
     if (isB2Configured && s3Client) {
       try {
         await s3Client.send(new DeleteObjectCommand({
-          Bucket: process.env.B2_BUCKET_NAME,
+          Bucket: B2_BUCKET,
           Key: `rooms/${roomId}/${filename}`,
         }));
       } catch (err) {
