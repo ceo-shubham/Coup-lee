@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { extractYouTubeId } from '../utils/youtubeParser';
-import { Volume2, VolumeX, Sparkles, ExternalLink, AlertCircle } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, ExternalLink, AlertCircle, Play } from 'lucide-react';
 
 // Load YouTube IFrame API script once
 let ytApiPromise = null;
@@ -29,6 +29,7 @@ export function YouTubeSyncPlayer({
   lastSyncEvent,
   onPlaybackChange,
   onTrackEnded,
+  onTimeUpdate,
   volume,
   isMuted,
 }) {
@@ -37,6 +38,7 @@ export function YouTubeSyncPlayer({
   const isReadyRef = useRef(false);
   const suppressEventsUntilRef = useRef(Date.now() + 4000);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [isActuallyPlaying, setIsActuallyPlaying] = useState(false);
   const [playerError, setPlayerError] = useState(null);
 
   const videoId = track ? (track.videoId || extractYouTubeId(track.url)) : null;
@@ -101,29 +103,38 @@ export function YouTubeSyncPlayer({
               event.target.pauseVideo();
             }
 
+            if (onTimeUpdate && typeof event.target.getDuration === 'function') {
+              try {
+                const dur = event.target.getDuration() || 0;
+                onTimeUpdate(targetStartTime, dur);
+              } catch {}
+            }
+
             // Keep events locked until initial track sync is stable
             suppressEventsUntilRef.current = Date.now() + 2500;
           },
           onStateChange: (event) => {
             if (!isMounted) return;
 
-            // Prevent ping-pong loop when player is responding to remote sync or initialization
-            if (Date.now() < suppressEventsUntilRef.current) {
-              return;
-            }
-
             const state = event.data;
             const currentTime = playerRef.current?.getCurrentTime() || 0;
 
             if (state === YT.PlayerState.PLAYING) {
-              onPlaybackChange(true, currentTime);
+              setIsActuallyPlaying(true);
+              if (Date.now() >= suppressEventsUntilRef.current) {
+                onPlaybackChange(true, currentTime);
+              }
             } else if (state === YT.PlayerState.PAUSED) {
+              setIsActuallyPlaying(false);
               // Ignore pause if tab was minimized/hidden by browser
               if (document.visibilityState === 'hidden') {
                 return;
               }
-              onPlaybackChange(false, currentTime);
+              if (Date.now() >= suppressEventsUntilRef.current) {
+                onPlaybackChange(false, currentTime);
+              }
             } else if (state === YT.PlayerState.ENDED) {
+              setIsActuallyPlaying(false);
               onTrackEnded();
             }
           },
@@ -221,9 +232,42 @@ export function YouTubeSyncPlayer({
     }
   }, [volume, isMuted]);
 
+  // Live progress updates to bottom scrubber bar
+  useEffect(() => {
+    if (!playback?.isPlaying || !onTimeUpdate) return;
+    const interval = setInterval(() => {
+      if (playerRef.current && isReadyRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        try {
+          const cur = playerRef.current.getCurrentTime() || 0;
+          const dur = playerRef.current.getDuration() || 0;
+          onTimeUpdate(cur, dur);
+        } catch {}
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [playback?.isPlaying, onTimeUpdate]);
+
   return (
     <div className="relative w-full aspect-video max-h-[24vh] max-w-sm sm:max-w-md mx-auto rounded-2xl overflow-hidden glass-panel-glow border border-rose-500/30 shadow-xl bg-black">
       <div ref={containerRef} className="w-full h-full" />
+
+      {/* Autoplay blocked fallback tap button */}
+      {playback?.isPlaying && !isActuallyPlaying && !isVideoLoading && !playerError && (
+        <button
+          onClick={() => {
+            if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
+              playerRef.current.playVideo();
+            }
+          }}
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 hover:bg-black/20 transition-all cursor-pointer group"
+          title="Click to play and sync audio"
+        >
+          <div className="w-12 h-12 rounded-full bg-rose-600/90 group-hover:bg-rose-500 border border-white/50 shadow-glow-pink flex items-center justify-center text-white transform group-hover:scale-110 active:scale-95 transition-all">
+            <Play className="w-5 h-5 fill-white ml-0.5" />
+          </div>
+          <span className="text-xs font-semibold text-white drop-shadow mt-2">Tap to Play Audio</span>
+        </button>
+      )}
 
       {isVideoLoading && !playerError && (
         <div className="absolute inset-0 bg-[#12040a]/90 flex flex-col items-center justify-center gap-3 z-10">

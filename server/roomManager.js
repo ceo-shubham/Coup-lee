@@ -71,9 +71,31 @@ class RoomManager {
       console.log(`[RoomManager] Cancelled pending cleanup for room ${roomId} (user joined)`);
     }
 
-    const room = this.rooms.get(roomId);
+    let room = this.rooms.get(roomId);
     if (!room) {
-      return { error: 'Room not found. Please check the 6-digit code.' };
+      // Auto-restore / recover the room if server rebooted
+      if (/^\d{6}$/.test(roomId)) {
+        console.log(`[RoomManager] Room ${roomId} not in memory (server reboot/reconnect). Auto-restoring room for user ${user?.name || 'Partner'}`);
+        room = {
+          id: roomId,
+          createdAt: Date.now(),
+          users: new Map(),
+          currentTrack: null,
+          playback: {
+            isPlaying: false,
+            currentTime: 0,
+            lastUpdated: Date.now(),
+            playbackRate: 1,
+          },
+          queue: [],
+          history: [],
+          messages: [],
+          togetherTimerStart: null,
+        };
+        this.rooms.set(roomId, room);
+      } else {
+        return { error: 'Room not found. Please check the 6-digit code.' };
+      }
     }
 
     // Check if user is reconnecting with a new socketId (replace old socket entry)
@@ -118,6 +140,51 @@ class RoomManager {
 
     console.log(`[RoomManager] User ${user.name} joined room ${roomId}. Total users: ${room.users.size}`);
     return { room: this.serializeRoom(room) };
+  }
+
+  /**
+   * Helper to get an existing room or auto-recover it
+   */
+  getOrCreateRoom(roomId, socketId = null, user = null) {
+    if (!roomId) return null;
+    let room = this.rooms.get(roomId);
+    if (!room) {
+      console.log(`[RoomManager] Auto-recovering room ${roomId} for action`);
+      room = {
+        id: roomId,
+        createdAt: Date.now(),
+        users: new Map(),
+        currentTrack: null,
+        playback: {
+          isPlaying: false,
+          currentTime: 0,
+          lastUpdated: Date.now(),
+          playbackRate: 1,
+        },
+        queue: [],
+        history: [],
+        messages: [],
+        togetherTimerStart: null,
+      };
+      this.rooms.set(roomId, room);
+    }
+    if (socketId) {
+      this.userToRoom.set(socketId, roomId);
+      if (user && !room.users.has(socketId)) {
+        room.users.set(socketId, {
+          socketId,
+          user: {
+            id: user.id || socketId,
+            name: user.name || 'Partner',
+            email: user.email || '',
+            avatar: user.avatar || '',
+          },
+          joinedAt: Date.now(),
+          isCreator: false,
+        });
+      }
+    }
+    return room;
   }
 
   /**
@@ -176,7 +243,7 @@ class RoomManager {
    * Update playback status (play, pause, seek)
    */
   updatePlayback(roomId, { isPlaying, currentTime, playbackRate }) {
-    const room = this.rooms.get(roomId);
+    const room = this.getOrCreateRoom(roomId);
     if (!room) return null;
 
     room.playback = {
@@ -193,7 +260,7 @@ class RoomManager {
    * Set new current playing track
    */
   setCurrentTrack(roomId, track) {
-    const room = this.rooms.get(roomId);
+    const room = this.getOrCreateRoom(roomId);
     if (!room) return null;
 
     if (room.currentTrack) {
@@ -220,7 +287,7 @@ class RoomManager {
    * Add track to shared queue
    */
   addToQueue(roomId, track) {
-    const room = this.rooms.get(roomId);
+    const room = this.getOrCreateRoom(roomId);
     if (!room) return null;
 
     // If nothing currently playing, play this immediately
@@ -236,7 +303,7 @@ class RoomManager {
    * Play next track from queue
    */
   playNext(roomId) {
-    const room = this.rooms.get(roomId);
+    const room = this.getOrCreateRoom(roomId);
     if (!room) return null;
 
     if (room.queue.length > 0) {

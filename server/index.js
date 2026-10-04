@@ -307,6 +307,8 @@ io.on('connection', (socket) => {
 
   // Playback state update (play, pause, seek)
   socket.on('playback:update', ({ roomId, isPlaying, currentTime, playbackRate }) => {
+    if (!roomId) return;
+    socket.join(roomId);
     const updated = roomManager.updatePlayback(roomId, { isPlaying, currentTime, playbackRate });
     if (updated) {
       // Broadcast to everyone else in the room
@@ -319,6 +321,8 @@ io.on('connection', (socket) => {
 
   // Track change (immediate play)
   socket.on('track:change', ({ roomId, track }) => {
+    if (!roomId || !track) return;
+    socket.join(roomId);
     const result = roomManager.setCurrentTrack(roomId, track);
     if (result) {
       io.in(roomId).emit('track:changed', result);
@@ -327,6 +331,8 @@ io.on('connection', (socket) => {
 
   // Add track to queue
   socket.on('queue:add', ({ roomId, track }) => {
+    if (!roomId || !track) return;
+    socket.join(roomId);
     const result = roomManager.addToQueue(roomId, track);
     if (result) {
       if (result.currentTrack) {
@@ -339,6 +345,8 @@ io.on('connection', (socket) => {
 
   // Skip / Next track
   socket.on('queue:next', ({ roomId }) => {
+    if (!roomId) return;
+    socket.join(roomId);
     const result = roomManager.playNext(roomId);
     if (result) {
       io.in(roomId).emit('track:changed', result);
@@ -347,6 +355,8 @@ io.on('connection', (socket) => {
 
   // Remove track from queue
   socket.on('queue:remove', ({ roomId, trackId }) => {
+    if (!roomId) return;
+    socket.join(roomId);
     const queue = roomManager.removeFromQueue(roomId, trackId);
     if (queue) {
       io.in(roomId).emit('queue:updated', { queue });
@@ -355,6 +365,8 @@ io.on('connection', (socket) => {
 
   // Real-time Chat / Whisper / Love Note
   socket.on('chat:send', ({ roomId, text, sender, emoji, type }) => {
+    if (!roomId) return;
+    socket.join(roomId);
     const message = roomManager.addMessage(roomId, { text, sender, emoji, type });
     if (message) {
       io.in(roomId).emit('chat:message', message);
@@ -363,6 +375,8 @@ io.on('connection', (socket) => {
 
   // Floating Heart / Live Love Reaction Burst
   socket.on('reaction:send', ({ roomId, reaction, sender }) => {
+    if (!roomId) return;
+    socket.join(roomId);
     io.in(roomId).emit('reaction:received', {
       reaction: reaction || '❤️',
       sender,

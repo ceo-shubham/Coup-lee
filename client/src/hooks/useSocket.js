@@ -3,10 +3,10 @@ import { io } from 'socket.io-client';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
-export function useSocket() {
+export function useSocket(initialUser = null) {
   const socketRef = useRef(null);
   const activeRoomIdRef = useRef(null);
-  const currentUserRef = useRef(null);
+  const currentUserRef = useRef(initialUser);
   const [isConnected, setIsConnected] = useState(false);
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -14,9 +14,15 @@ export function useSocket() {
   const [lastSyncEvent, setLastSyncEvent] = useState(null);
 
   useEffect(() => {
+    if (initialUser) {
+      currentUserRef.current = initialUser;
+    }
+  }, [initialUser]);
+
+  useEffect(() => {
     const socket = io(SERVER_URL || undefined, {
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 15,
+      reconnectionAttempts: 25,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
@@ -27,11 +33,22 @@ export function useSocket() {
       console.log('[Socket] Connected with ID:', socket.id);
 
       // Seamlessly rejoin room if we were already in one before mobile minimize/network switch
-      if (activeRoomIdRef.current && currentUserRef.current) {
-        console.log('[Socket] Reconnected! Silently rejoining room:', activeRoomIdRef.current);
+      const targetRoomId = activeRoomIdRef.current || localStorage.getItem('coup_le_current_room');
+      const currentUser = currentUserRef.current || (() => {
+        try {
+          return JSON.parse(localStorage.getItem('coup_le_user') || 'null');
+        } catch {
+          return null;
+        }
+      })();
+
+      if (targetRoomId && currentUser) {
+        console.log('[Socket] Reconnected! Silently rejoining room:', targetRoomId);
+        activeRoomIdRef.current = targetRoomId;
+        currentUserRef.current = currentUser;
         socket.emit('room:join', {
-          roomId: activeRoomIdRef.current,
-          user: currentUserRef.current,
+          roomId: targetRoomId,
+          user: currentUser,
         }, (response) => {
           if (response?.room) {
             setRoom(response.room);
@@ -197,23 +214,118 @@ export function useSocket() {
   }, [room?.id]);
 
   const changeTrack = useCallback((track) => {
-    if (!socketRef.current || !room?.id) return;
-    socketRef.current.emit('track:change', { roomId: room.id, track });
+    const roomId = room?.id || activeRoomIdRef.current || localStorage.getItem('coup_le_current_room');
+    if (!roomId || !track) return;
+
+    // Optimistically update local room immediately for instant snappy UI & playback
+    setRoom((prev) => {
+      if (!prev) return null;
+      const history = prev.currentTrack
+        ? [prev.currentTrack, ...(prev.history || [])].slice(0, 20)
+        : prev.history || [];
+      return {
+        ...prev,
+        currentTrack: track,
+        playback: {
+          isPlaying: true,
+          currentTime: 0,
+          lastUpdated: Date.now(),
+          playbackRate: 1,
+        },
+        history,
+      };
+    });
+
+    if (socketRef.current) {
+      socketRef.current.emit('track:change', { roomId, track });
+    }
   }, [room?.id]);
 
   const addToQueue = useCallback((track) => {
-    if (!socketRef.current || !room?.id) return;
-    socketRef.current.emit('queue:add', { roomId: room.id, track });
+    const roomId = room?.id || activeRoomIdRef.current || localStorage.getItem('coup_le_current_room');
+    if (!roomId || !track) return;
+
+    // Optimistic local update
+    setRoom((prev) => {
+      if (!prev) return null;
+      if (!prev.currentTrack) {
+        return {
+          ...prev,
+          currentTrack: track,
+          playback: {
+            isPlaying: true,
+            currentTime: 0,
+            lastUpdated: Date.now(),
+            playbackRate: 1,
+          },
+        };
+      }
+      return {
+        ...prev,
+        queue: [...(prev.queue || []), track],
+      };
+    });
+
+    if (socketRef.current) {
+      socketRef.current.emit('queue:add', { roomId, track });
+    }
   }, [room?.id]);
 
   const playNext = useCallback(() => {
-    if (!socketRef.current || !room?.id) return;
-    socketRef.current.emit('queue:next', { roomId: room.id });
+    const roomId = room?.id || activeRoomIdRef.current || localStorage.getItem('coup_le_current_room');
+    if (!roomId) return;
+
+    // Optimistic local update
+    setRoom((prev) => {
+      if (!prev) return null;
+      if (prev.queue && prev.queue.length > 0) {
+        const nextTrack = prev.queue[0];
+        const newQueue = prev.queue.slice(1);
+        const history = prev.currentTrack
+          ? [prev.currentTrack, ...(prev.history || [])].slice(0, 20)
+          : prev.history || [];
+        return {
+          ...prev,
+          currentTrack: nextTrack,
+          playback: {
+            isPlaying: true,
+            currentTime: 0,
+            lastUpdated: Date.now(),
+            playbackRate: 1,
+          },
+          queue: newQueue,
+          history,
+        };
+      } else {
+        return {
+          ...prev,
+          currentTrack: null,
+          playback: { ...prev.playback, isPlaying: false },
+        };
+      }
+    });
+
+    if (socketRef.current) {
+      socketRef.current.emit('queue:next', { roomId });
+    }
   }, [room?.id]);
 
   const removeFromQueue = useCallback((trackId) => {
-    if (!socketRef.current || !room?.id) return;
-    socketRef.current.emit('queue:remove', { roomId: room.id, trackId });
+    const roomId = room?.id || activeRoomIdRef.current || localStorage.getItem('coup_le_current_room');
+    if (!roomId) return;
+
+    // Optimistic local update
+    setRoom((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        queue: (prev.queue || []).filter((t) => t.id !== trackId),
+      };
+    });
+
+    if (socketRef.current) {
+      socketRef.current.emit('queue:remove', { roomId, trackId });
+    }
   }, [room?.id]);
 
   const sendMessage = useCallback((text, type = 'text', emoji = null, sender) => {

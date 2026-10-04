@@ -34,7 +34,7 @@ export function App() {
     removeFromQueue,
     sendMessage,
     sendReaction,
-  } = useSocket();
+  } = useSocket(user);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -142,6 +142,9 @@ export function App() {
   }, []);
 
   const handleAddTrack = useCallback((track, playImmediately) => {
+    if (track?.type === 'youtube') {
+      setShowVideo(true);
+    }
     if (playImmediately) {
       changeTrack(track);
     } else {
@@ -215,6 +218,7 @@ export function App() {
               lastSyncEvent={lastSyncEvent}
               onPlaybackChange={handlePlaybackChange}
               onTrackEnded={handleTrackEnded}
+              onTimeUpdate={handleTimeUpdate}
               volume={volume}
               isMuted={isMuted}
             />
@@ -238,13 +242,43 @@ export function App() {
             </div>
           </div>
         ) : (
-          <VinylPlayer
-            track={currentTrack}
-            isPlaying={isPlaying}
-            onSendHeart={handleSendHeart}
-            showVideo={showVideo}
-            onToggleVideo={() => setShowVideo(!showVideo)}
-          />
+          <>
+            <VinylPlayer
+              track={currentTrack}
+              isPlaying={isPlaying}
+              onSendHeart={handleSendHeart}
+              showVideo={showVideo}
+              onToggleVideo={() => setShowVideo(!showVideo)}
+            />
+
+            {/* If YouTube track is active but in CD view, keep player mounted offscreen so audio plays smoothly */}
+            {currentTrack?.type === 'youtube' && !showVideo && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: '-9999px',
+                  left: '-9999px',
+                  width: '200px',
+                  height: '200px',
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  zIndex: -1,
+                }}
+                aria-hidden="true"
+              >
+                <YouTubeSyncPlayer
+                  track={currentTrack}
+                  playback={room.playback}
+                  lastSyncEvent={lastSyncEvent}
+                  onPlaybackChange={handlePlaybackChange}
+                  onTrackEnded={handleTrackEnded}
+                  onTimeUpdate={handleTimeUpdate}
+                  volume={volume}
+                  isMuted={isMuted}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {/* Hidden Audio Sync Engine for uploaded songs */}
