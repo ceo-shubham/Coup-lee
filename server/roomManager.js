@@ -27,6 +27,9 @@ class RoomManager {
       id: roomId,
       createdAt: Date.now(),
       creatorSocketId: socketId,
+      creatorId: user.id || socketId,
+      creatorEmail: user.email || '',
+      viewMode: 'video',
       users: new Map(),
       currentTrack: null,
       playback: {
@@ -79,6 +82,10 @@ class RoomManager {
         room = {
           id: roomId,
           createdAt: Date.now(),
+          creatorSocketId: socketId,
+          creatorId: user.id || socketId,
+          creatorEmail: user.email || '',
+          viewMode: 'video',
           users: new Map(),
           currentTrack: null,
           playback: {
@@ -153,6 +160,10 @@ class RoomManager {
       room = {
         id: roomId,
         createdAt: Date.now(),
+        creatorSocketId: socketId,
+        creatorId: user?.id || socketId,
+        creatorEmail: user?.email || '',
+        viewMode: 'video',
         users: new Map(),
         currentTrack: null,
         playback: {
@@ -350,6 +361,16 @@ class RoomManager {
   }
 
   /**
+   * Set room view mode (Video vs CD Vinyl) - Host controlled
+   */
+  setViewMode(roomId, viewMode) {
+    const room = this.getOrCreateRoom(roomId);
+    if (!room) return null;
+    room.viewMode = viewMode === 'cd' ? 'cd' : 'video';
+    return room.viewMode;
+  }
+
+  /**
    * Helper to format room data for client
    */
   serializeRoom(room) {
@@ -357,6 +378,9 @@ class RoomManager {
     return {
       id: room.id,
       createdAt: room.createdAt,
+      creatorId: room.creatorId,
+      creatorEmail: room.creatorEmail,
+      viewMode: room.viewMode || 'video',
       users: Array.from(room.users.values()),
       currentTrack: room.currentTrack,
       playback: room.playback,

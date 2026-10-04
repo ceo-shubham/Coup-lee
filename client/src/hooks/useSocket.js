@@ -117,6 +117,10 @@ export function useSocket(initialUser = null) {
       setReactions((prev) => [...prev.slice(-15), reaction]);
     });
 
+    socket.on('room:view_mode_changed', ({ viewMode }) => {
+      setRoom((prev) => (prev ? { ...prev, viewMode } : null));
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -348,6 +352,16 @@ export function useSocket(initialUser = null) {
     });
   }, [room?.id]);
 
+  const setViewMode = useCallback((viewMode) => {
+    const roomId = room?.id || activeRoomIdRef.current || localStorage.getItem('coup_le_current_room');
+    if (!roomId) return;
+    // Optimistic local update
+    setRoom((prev) => (prev ? { ...prev, viewMode } : null));
+    if (socketRef.current) {
+      socketRef.current.emit('room:set_view_mode', { roomId, viewMode });
+    }
+  }, [room?.id]);
+
   return {
     socket: socketRef.current,
     isConnected,
@@ -365,5 +379,6 @@ export function useSocket(initialUser = null) {
     removeFromQueue,
     sendMessage,
     sendReaction,
+    setViewMode,
   };
 }

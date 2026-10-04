@@ -34,6 +34,7 @@ export function App() {
     removeFromQueue,
     sendMessage,
     sendReaction,
+    setViewMode,
   } = useSocket(user);
 
   const [loading, setLoading] = useState(false);
@@ -54,6 +55,24 @@ export function App() {
 
   const currentTrack = room?.currentTrack || null;
   const isPlaying = Boolean(room?.playback?.isPlaying);
+
+  // Room host detection: creatorId or isCreator flag
+  const isHost = Boolean(
+    (room?.creatorId && (room.creatorId === user?.id || room.creatorId === user?.socketId)) ||
+    (room?.creatorEmail && user?.email && room.creatorEmail === user.email) ||
+    room?.users?.find((u) => u.isCreator && (u.user?.id === user?.id || (user?.email && u.user?.email === user?.email))) ||
+    (room?.users?.length === 1)
+  );
+
+  // Synchronized view mode: room.viewMode set by host takes precedence ('video' | 'cd')
+  const isVideoMode = room?.viewMode ? room.viewMode === 'video' : showVideo;
+
+  const handleToggleViewMode = useCallback(() => {
+    if (!isHost) return;
+    const nextMode = isVideoMode ? 'cd' : 'video';
+    setShowVideo(nextMode === 'video');
+    setViewMode(nextMode);
+  }, [isHost, isVideoMode, setViewMode]);
 
   // Screen Wake Lock & Background Audio Keep-Alive
   const { isLocked: isWakeLocked } = useWakeLock(isPlaying && Boolean(room));
@@ -143,6 +162,9 @@ export function App() {
 
   const handleAddTrack = useCallback((track, playImmediately) => {
     if (track?.type === 'youtube') {
+      if (isHost) {
+        setViewMode('video');
+      }
       setShowVideo(true);
     }
     if (playImmediately) {
@@ -150,7 +172,7 @@ export function App() {
     } else {
       addToQueue(track);
     }
-  }, [changeTrack, addToQueue]);
+  }, [changeTrack, addToQueue, isHost, setViewMode]);
 
   const handleSendHeart = useCallback(() => {
     sendReaction('❤️', user);
@@ -225,7 +247,7 @@ export function App() {
 
       {/* Main Player Display Area (One-Frame Responsive Fit) */}
       <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-3 py-1 sm:py-2 max-w-4xl mx-auto w-full overflow-hidden">
-        {currentTrack?.type === 'youtube' && showVideo ? (
+        {currentTrack?.type === 'youtube' && isVideoMode ? (
           <div className="w-full flex flex-col items-center gap-2 sm:gap-3 max-h-full">
             <YouTubeSyncPlayer
               track={currentTrack}
@@ -248,12 +270,20 @@ export function App() {
                 </p>
               </div>
 
-              <button
-                onClick={() => setShowVideo(false)}
-                className="px-2.5 py-1 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-[10px] sm:text-xs text-rose-200 transition-colors flex-shrink-0"
-              >
-                🎵 Switch to CD
-              </button>
+              {isHost ? (
+                <button
+                  onClick={handleToggleViewMode}
+                  className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-rose-600/80 to-pink-600/80 hover:from-rose-500 hover:to-pink-500 border border-rose-400/40 text-[10px] sm:text-xs text-white font-semibold transition-all shadow-sm flex items-center gap-1 flex-shrink-0 active:scale-95"
+                  title="Host Control: Switch Room to CD Vinyl mode"
+                >
+                  <span>🎵 Switch to CD</span>
+                  <span className="text-[9px] bg-black/30 px-1 py-0.2 rounded text-rose-200">Host</span>
+                </button>
+              ) : (
+                <span className="px-2.5 py-1 rounded-xl bg-rose-950/40 border border-rose-500/20 text-[10px] text-rose-300/80 flex-shrink-0">
+                  🎬 Video View
+                </span>
+              )}
             </div>
           </div>
         ) : (
@@ -262,12 +292,13 @@ export function App() {
               track={currentTrack}
               isPlaying={isPlaying}
               onSendHeart={handleSendHeart}
-              showVideo={showVideo}
-              onToggleVideo={() => setShowVideo(!showVideo)}
+              showVideo={isVideoMode}
+              onToggleVideo={handleToggleViewMode}
+              isHost={isHost}
             />
 
             {/* If YouTube track is active but in CD view, keep player mounted offscreen so audio plays smoothly */}
-            {currentTrack?.type === 'youtube' && !showVideo && (
+            {currentTrack?.type === 'youtube' && !isVideoMode && (
               <div
                 style={{
                   position: 'fixed',

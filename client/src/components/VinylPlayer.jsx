@@ -7,6 +7,7 @@ export function VinylPlayer({
   onSendHeart,
   showVideo,
   onToggleVideo,
+  isHost,
 }) {
   const isYouTube = track?.type === 'youtube';
 
@@ -77,13 +78,21 @@ export function VinylPlayer({
 
             {/* Switch between Video and Vinyl for YouTube */}
             {isYouTube && (
-              <div className="mt-1.5">
-                <button
-                  onClick={onToggleVideo}
-                  className="px-2.5 py-0.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-[10px] sm:text-xs text-rose-200 transition-colors"
-                >
-                  {showVideo ? '🎵 Switch to CD' : '🎬 Switch to Video'}
-                </button>
+              <div className="mt-1.5 flex items-center justify-center">
+                {isHost ? (
+                  <button
+                    onClick={onToggleVideo}
+                    className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-rose-600/80 to-pink-600/80 hover:from-rose-500 hover:to-pink-500 border border-rose-400/40 text-[10px] sm:text-xs text-white font-semibold shadow-sm transition-all active:scale-95 flex items-center gap-1"
+                    title="Room Creator Control: Toggle Video or CD for the room"
+                  >
+                    <span>{showVideo ? '🎵 Switch to CD' : '🎬 Switch to Video'}</span>
+                    <span className="text-[9px] bg-black/30 px-1 py-0.2 rounded text-rose-200">Host</span>
+                  </button>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-xl bg-rose-950/40 border border-rose-500/20 text-[10px] text-rose-300/80">
+                    {showVideo ? '🎬 Video View' : '🎵 CD View (Set by Host)'}
+                  </span>
+                )}
               </div>
             )}
           </>

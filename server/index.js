@@ -385,6 +385,16 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Set room view mode (Video vs CD Vinyl) - Host controlled
+  socket.on('room:set_view_mode', ({ roomId, viewMode }) => {
+    if (!roomId) return;
+    socket.join(roomId);
+    const mode = roomManager.setViewMode(roomId, viewMode);
+    if (mode) {
+      io.in(roomId).emit('room:view_mode_changed', { viewMode: mode });
+    }
+  });
+
   // Sync ping (to calculate client-server time offset for precision sync)
   socket.on('sync:ping', (clientTimestamp, callback) => {
     if (typeof callback === 'function') {
