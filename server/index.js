@@ -8,7 +8,8 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { roomManager } from './roomManager.js';
-import { registerFile, deleteFile, UPLOADS_DIR } from './storage.js';
+import { registerFile, deleteFile, getLibraryTracks, UPLOADS_DIR, isB2Configured, s3Client } from './storage.js';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 
 dotenv.config();
 
@@ -110,7 +111,13 @@ app.post('/api/upload', upload.single('audio'), async (req, res) => {
       return res.status(400).json({ error: 'Missing roomId' });
     }
 
-    const fileMeta = await registerFile(req.file, roomId);
+    const fileMeta = await registerFile(req.file, roomId, {
+      userEmail: req.body.userEmail || req.body.email || '',
+      title: req.body.title,
+      artist: req.body.artist,
+      duration: req.body.duration,
+      userName: req.body.userName,
+    });
 
     const track = {
       id: 'audio_' + req.file.filename,
@@ -122,6 +129,7 @@ app.post('/api/upload', upload.single('audio'), async (req, res) => {
       size: fileMeta.size,
       duration: Number(req.body.duration) || 0,
       thumbnail: null,
+      isPermanent: fileMeta.isPermanent,
       addedBy: {
         name: req.body.userName || 'Partner',
         avatar: req.body.userAvatar || '',
@@ -135,12 +143,50 @@ app.post('/api/upload', upload.single('audio'), async (req, res) => {
   }
 });
 
+// Persistent Audio Library Endpoint (tracks saved permanently in B2)
+app.get('/api/library', (req, res) => {
+  try {
+    const tracks = getLibraryTracks();
+    res.json({ success: true, tracks });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to fetch library' });
+  }
+});
+
 // Audio streaming with HTTP 206 Partial Content (essential for audio seeking & lockscreen buffering)
-app.get('/api/stream/:filename', (req, res) => {
+app.get('/api/stream/:filename', async (req, res) => {
   const filename = path.basename(req.params.filename);
   const filePath = path.join(UPLOADS_DIR, filename);
 
   if (!fs.existsSync(filePath)) {
+    // If not on local disk (e.g. Render container restarted), stream from Backblaze B2!
+    if (isB2Configured && s3Client) {
+      try {
+        const b2Command = new GetObjectCommand({
+          Bucket: process.env.B2_BUCKET_NAME,
+          Key: `library/${filename}`,
+          Range: req.headers.range,
+        });
+        const b2Res = await s3Client.send(b2Command);
+        if (req.headers.range && b2Res.ContentRange) {
+          res.writeHead(206, {
+            'Content-Range': b2Res.ContentRange,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': b2Res.ContentLength,
+            'Content-Type': b2Res.ContentType || 'audio/mpeg',
+          });
+        } else {
+          res.writeHead(200, {
+            'Content-Length': b2Res.ContentLength,
+            'Content-Type': b2Res.ContentType || 'audio/mpeg',
+            'Accept-Ranges': 'bytes',
+          });
+        }
+        return b2Res.Body.pipe(res);
+      } catch (err) {
+        console.warn(`[Storage] B2 streaming fallback failed for ${filename}:`, err.message);
+      }
+    }
     return res.status(404).json({ error: 'Audio file not found or expired' });
   }
 

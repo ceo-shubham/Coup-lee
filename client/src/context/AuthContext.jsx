@@ -32,7 +32,7 @@ function decodeJwt(token) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('coup_le_user');
+      const saved = localStorage.getItem('coup_le_user') || sessionStorage.getItem('coup_le_user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -46,7 +46,11 @@ export function AuthProvider({ children }) {
       // Ignore if google script not active
     }
     setUser(null);
-    localStorage.removeItem('coup_le_user');
+    try {
+      localStorage.removeItem('coup_le_user');
+      localStorage.removeItem('coup_le_current_room');
+      sessionStorage.removeItem('coup_le_user');
+    } catch {}
   };
 
   const loginWithGoogle = (credentialToken) => {
@@ -62,7 +66,10 @@ export function AuthProvider({ children }) {
     };
 
     setUser(googleUser);
-    localStorage.setItem('coup_le_user', JSON.stringify(googleUser));
+    try {
+      localStorage.setItem('coup_le_user', JSON.stringify(googleUser));
+      sessionStorage.setItem('coup_le_user', JSON.stringify(googleUser));
+    } catch {}
   };
 
   const loginCustom = (userData) => {
@@ -74,7 +81,10 @@ export function AuthProvider({ children }) {
       provider: 'custom',
     };
     setUser(customUser);
-    localStorage.setItem('coup_le_user', JSON.stringify(customUser));
+    try {
+      localStorage.setItem('coup_le_user', JSON.stringify(customUser));
+      sessionStorage.setItem('coup_le_user', JSON.stringify(customUser));
+    } catch {}
   };
 
   const contextValue = {

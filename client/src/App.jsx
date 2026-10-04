@@ -108,6 +108,7 @@ export function App() {
 
   // Leave Room Handler
   const handleLeaveRoom = async () => {
+    localStorage.removeItem('coup_le_current_room');
     if (room?.id) {
       await leaveRoom(room.id);
     }
@@ -152,16 +153,25 @@ export function App() {
     sendReaction('❤️', user);
   }, [sendReaction, user]);
 
-  // Clean up on tab close
+  // Persist active room ID in localStorage
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (room?.id) {
-        leaveRoom(room.id);
+    if (room?.id) {
+      localStorage.setItem('coup_le_current_room', room.id);
+    }
+  }, [room?.id]);
+
+  // Auto-restore room on page refresh if user was previously in a room
+  useEffect(() => {
+    if (isAuthenticated && !room && !loading) {
+      const savedRoomId = localStorage.getItem('coup_le_current_room');
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetRoom = urlParams.get('room') || savedRoomId;
+      if (targetRoom && /^\d{6}$/.test(targetRoom)) {
+        console.log('[App] Auto-restoring room on refresh:', targetRoom);
+        handleJoinRoom(targetRoom);
       }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [room?.id, leaveRoom]);
+    }
+  }, [isAuthenticated, Boolean(room)]);
 
   // 1. If not authenticated, render Login screen
   if (!isAuthenticated) {
