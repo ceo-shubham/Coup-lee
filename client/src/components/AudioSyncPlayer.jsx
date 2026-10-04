@@ -132,6 +132,18 @@ export function AudioSyncPlayer({
     }
   };
 
+  const handleEnded = () => {
+    if (audioRef.current) {
+      const dur = audioRef.current.duration || 0;
+      const cur = audioRef.current.currentTime || 0;
+      if (dur > 5 && cur < dur - 3) {
+        console.warn('[Audio Player] Ignoring premature ended event at', cur, 'of', dur);
+        return;
+      }
+    }
+    onTrackEnded();
+  };
+
   return (
     <div style={{ position: 'fixed', bottom: -500, left: -500, opacity: 0.001, pointerEvents: 'none' }}>
       <audio
@@ -142,7 +154,7 @@ export function AudioSyncPlayer({
         onPause={handlePause}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={onTrackEnded}
+        onEnded={handleEnded}
       />
     </div>
   );

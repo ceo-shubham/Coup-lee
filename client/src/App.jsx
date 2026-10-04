@@ -247,8 +247,28 @@ export function App() {
 
       {/* Main Player Display Area (One-Frame Responsive Fit) */}
       <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-3 py-1 sm:py-2 max-w-4xl mx-auto w-full overflow-hidden">
-        {currentTrack?.type === 'youtube' && isVideoMode ? (
-          <div className="w-full flex flex-col items-center gap-2 sm:gap-3 max-h-full">
+        {/* CD Vinyl Player - rendered for audio tracks, OR when in CD mode, OR when no track */}
+        {(!isVideoMode || currentTrack?.type !== 'youtube') && (
+          <VinylPlayer
+            track={currentTrack}
+            isPlaying={isPlaying}
+            onSendHeart={handleSendHeart}
+            showVideo={isVideoMode}
+            onToggleVideo={handleToggleViewMode}
+            isHost={isHost}
+          />
+        )}
+
+        {/* Single persistent YouTube Player instance - never unmounted when toggling CD/Video mode */}
+        {currentTrack?.type === 'youtube' && (
+          <div
+            className={
+              isVideoMode
+                ? "w-full flex flex-col items-center gap-2 sm:gap-3 max-h-full"
+                : "fixed -top-[9999px] -left-[9999px] w-[200px] h-[200px] opacity-0 pointer-events-none -z-50"
+            }
+            aria-hidden={!isVideoMode}
+          >
             <YouTubeSyncPlayer
               track={currentTrack}
               playback={room.playback}
@@ -260,71 +280,34 @@ export function App() {
               isMuted={isMuted}
             />
 
-            <div className="flex items-center justify-between w-full px-2 max-w-sm sm:max-w-md">
-              <div className="min-w-0 mr-2">
-                <h3 className="text-xs sm:text-sm font-bold text-white truncate max-w-xs">
-                  {currentTrack.title}
-                </h3>
-                <p className="text-[10px] sm:text-xs text-rose-300/80 truncate">
-                  {currentTrack.artist} • Added by {currentTrack.addedBy?.name || 'Partner'}
-                </p>
-              </div>
+            {isVideoMode && (
+              <div className="flex items-center justify-between w-full px-2 max-w-sm sm:max-w-md">
+                <div className="min-w-0 mr-2">
+                  <h3 className="text-xs sm:text-sm font-bold text-white truncate max-w-xs">
+                    {currentTrack.title}
+                  </h3>
+                  <p className="text-[10px] sm:text-xs text-rose-300/80 truncate">
+                    {currentTrack.artist} • Added by {currentTrack.addedBy?.name || 'Partner'}
+                  </p>
+                </div>
 
-              {isHost ? (
-                <button
-                  onClick={handleToggleViewMode}
-                  className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-rose-600/80 to-pink-600/80 hover:from-rose-500 hover:to-pink-500 border border-rose-400/40 text-[10px] sm:text-xs text-white font-semibold transition-all shadow-sm flex items-center gap-1 flex-shrink-0 active:scale-95"
-                  title="Host Control: Switch Room to CD Vinyl mode"
-                >
-                  <span>🎵 Switch to CD</span>
-                  <span className="text-[9px] bg-black/30 px-1 py-0.2 rounded text-rose-200">Host</span>
-                </button>
-              ) : (
-                <span className="px-2.5 py-1 rounded-xl bg-rose-950/40 border border-rose-500/20 text-[10px] text-rose-300/80 flex-shrink-0">
-                  🎬 Video View
-                </span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <>
-            <VinylPlayer
-              track={currentTrack}
-              isPlaying={isPlaying}
-              onSendHeart={handleSendHeart}
-              showVideo={isVideoMode}
-              onToggleVideo={handleToggleViewMode}
-              isHost={isHost}
-            />
-
-            {/* If YouTube track is active but in CD view, keep player mounted offscreen so audio plays smoothly */}
-            {currentTrack?.type === 'youtube' && !isVideoMode && (
-              <div
-                style={{
-                  position: 'fixed',
-                  top: '-9999px',
-                  left: '-9999px',
-                  width: '200px',
-                  height: '200px',
-                  opacity: 0,
-                  pointerEvents: 'none',
-                  zIndex: -1,
-                }}
-                aria-hidden="true"
-              >
-                <YouTubeSyncPlayer
-                  track={currentTrack}
-                  playback={room.playback}
-                  lastSyncEvent={lastSyncEvent}
-                  onPlaybackChange={handlePlaybackChange}
-                  onTrackEnded={handleTrackEnded}
-                  onTimeUpdate={handleTimeUpdate}
-                  volume={volume}
-                  isMuted={isMuted}
-                />
+                {isHost ? (
+                  <button
+                    onClick={handleToggleViewMode}
+                    className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-rose-600/80 to-pink-600/80 hover:from-rose-500 hover:to-pink-500 border border-rose-400/40 text-[10px] sm:text-xs text-white font-semibold transition-all shadow-sm flex items-center gap-1 flex-shrink-0 active:scale-95"
+                    title="Host Control: Switch Room to CD Vinyl mode"
+                  >
+                    <span>🎵 Switch to CD</span>
+                    <span className="text-[9px] bg-black/30 px-1 py-0.2 rounded text-rose-200">Host</span>
+                  </button>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-xl bg-rose-950/40 border border-rose-500/20 text-[10px] text-rose-300/80 flex-shrink-0">
+                    🎬 Video View
+                  </span>
+                )}
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* Hidden Audio Sync Engine for uploaded songs */}

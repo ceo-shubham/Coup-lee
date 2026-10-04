@@ -111,13 +111,14 @@ export function YouTubeSyncPlayer({
             }
 
             // Keep events locked until initial track sync is stable
-            suppressEventsUntilRef.current = Date.now() + 2500;
+            suppressEventsUntilRef.current = Date.now() + 3500;
           },
           onStateChange: (event) => {
             if (!isMounted) return;
 
             const state = event.data;
-            const currentTime = playerRef.current?.getCurrentTime() || 0;
+            const currentTime = playerRef.current?.getCurrentTime ? playerRef.current.getCurrentTime() : 0;
+            const duration = playerRef.current?.getDuration ? playerRef.current.getDuration() : 0;
 
             if (state === YT.PlayerState.PLAYING) {
               setIsActuallyPlaying(true);
@@ -135,7 +136,22 @@ export function YouTubeSyncPlayer({
               }
             } else if (state === YT.PlayerState.ENDED) {
               setIsActuallyPlaying(false);
-              onTrackEnded();
+              // Validate genuine track completion:
+              // YouTube Iframe API frequently emits state 0 (ENDED) during initial buffering or resolution switches.
+              // Only trigger onTrackEnded if current time is within 4 seconds of the full duration.
+              const isLegitimateEnd = (duration > 10 && currentTime >= duration - 4) || (duration > 0 && duration <= 10 && currentTime >= duration - 1.5);
+              if (isLegitimateEnd) {
+                console.log('[YouTube Player] Song legitimately finished playing to end:', currentTime, '/', duration);
+                onTrackEnded();
+              } else {
+                console.warn('[YouTube Player] Suppressed false/premature ENDED event at', currentTime, 'of', duration);
+                // Auto-recover and resume if supposed to be playing
+                if (playback?.isPlaying && typeof playerRef.current?.playVideo === 'function') {
+                  try {
+                    playerRef.current.playVideo();
+                  } catch (e) {}
+                }
+              }
             }
           },
           onError: (err) => {
