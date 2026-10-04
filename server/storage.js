@@ -235,4 +235,17 @@ export async function cleanupRoomFiles(roomId) {
   roomFilesMap.delete(roomId);
 }
 
+/**
+ * Delete a specific ephemeral file
+ */
+export async function deleteFile(filename, roomId) {
+  const filePath = path.join(UPLOADS_DIR, filename);
+  if (fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+      console.log(`[Storage] Deleted file: ${filename}`);
+    } catch (e) {}
+  }
+}
+
 export { UPLOADS_DIR, isB2Configured, s3Client };

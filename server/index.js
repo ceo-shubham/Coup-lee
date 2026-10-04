@@ -8,7 +8,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { roomManager } from './roomManager.js';
-import { registerFile, deleteFile, getLibraryTracks, UPLOADS_DIR, isB2Configured, s3Client } from './storage.js';
+import { registerFile, getLibraryTracks, UPLOADS_DIR, isB2Configured, s3Client } from './storage.js';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 
 dotenv.config();
