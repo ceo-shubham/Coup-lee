@@ -118,6 +118,10 @@ export function YouTubeSyncPlayer({
             if (state === YT.PlayerState.PLAYING) {
               onPlaybackChange(true, currentTime);
             } else if (state === YT.PlayerState.PAUSED) {
+              // Ignore pause if tab was minimized/hidden by browser
+              if (document.visibilityState === 'hidden') {
+                return;
+              }
               onPlaybackChange(false, currentTime);
             } else if (state === YT.PlayerState.ENDED) {
               onTrackEnded();
@@ -151,6 +155,19 @@ export function YouTubeSyncPlayer({
       }
     };
   }, [videoId]);
+
+  // Handle visibility return (resume video if supposed to be playing)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && playback?.isPlaying && playerRef.current && isReadyRef.current) {
+        try {
+          playerRef.current.playVideo();
+        } catch {}
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [playback?.isPlaying]);
 
   // Handle remote playback sync from partner
   useEffect(() => {
@@ -205,7 +222,7 @@ export function YouTubeSyncPlayer({
   }, [volume, isMuted]);
 
   return (
-    <div className="relative w-full aspect-video max-h-[38vh] max-w-2xl mx-auto rounded-2xl overflow-hidden glass-panel-glow border border-rose-500/30 shadow-2xl bg-black">
+    <div className="relative w-full aspect-video max-h-[24vh] max-w-sm sm:max-w-md mx-auto rounded-2xl overflow-hidden glass-panel-glow border border-rose-500/30 shadow-xl bg-black">
       <div ref={containerRef} className="w-full h-full" />
 
       {isVideoLoading && !playerError && (

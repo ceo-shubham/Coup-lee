@@ -85,12 +85,37 @@ export function AudioSyncPlayer({
     }
   }, [volume, isMuted]);
 
+  // Keep background audio active when tab is minimized or screen is locked
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (playback?.isPlaying && audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch((err) => {
+          console.warn('[AudioPlayer] Background resume error:', err);
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [playback?.isPlaying]);
+
   const handlePlay = () => {
     if (Date.now() < suppressEventsUntilRef.current || !audioRef.current) return;
     onPlaybackChange(true, audioRef.current.currentTime);
   };
 
   const handlePause = () => {
+    // If the browser backgrounded the tab or user locked screen, do NOT broadcast pause to partner!
+    if (document.visibilityState === 'hidden') {
+      if (playback?.isPlaying && audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+      return;
+    }
     if (Date.now() < suppressEventsUntilRef.current || !audioRef.current) return;
     onPlaybackChange(false, audioRef.current.currentTime);
   };
@@ -108,7 +133,7 @@ export function AudioSyncPlayer({
   };
 
   return (
-    <div className="hidden">
+    <div style={{ position: 'fixed', bottom: -500, left: -500, opacity: 0.001, pointerEvents: 'none' }}>
       <audio
         ref={audioRef}
         playsInline

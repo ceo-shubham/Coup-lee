@@ -5,6 +5,8 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 export function useSocket() {
   const socketRef = useRef(null);
+  const activeRoomIdRef = useRef(null);
+  const currentUserRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -14,19 +16,34 @@ export function useSocket() {
   useEffect(() => {
     const socket = io(SERVER_URL || undefined, {
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 15,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
     socketRef.current = socket;
 
     socket.on('connect', () => {
       setIsConnected(true);
       console.log('[Socket] Connected with ID:', socket.id);
+
+      // Seamlessly rejoin room if we were already in one before mobile minimize/network switch
+      if (activeRoomIdRef.current && currentUserRef.current) {
+        console.log('[Socket] Reconnected! Silently rejoining room:', activeRoomIdRef.current);
+        socket.emit('room:join', {
+          roomId: activeRoomIdRef.current,
+          user: currentUserRef.current,
+        }, (response) => {
+          if (response?.room) {
+            setRoom(response.room);
+            setMessages(response.room.messages || []);
+          }
+        });
+      }
     });
 
     socket.on('disconnect', () => {
       setIsConnected(false);
-      console.log('[Socket] Disconnected');
+      console.log('[Socket] Disconnected (grace period active)');
     });
 
     socket.on('room:user_joined', ({ user, room: updatedRoom }) => {
@@ -97,11 +114,14 @@ export function useSocket() {
         reject(new Error('Server took too long to connect. Please check server status or retry in a few seconds.'));
       }, 7000);
 
+      currentUserRef.current = user;
+
       socketRef.current.emit('room:create', { user }, (response) => {
         clearTimeout(timeoutId);
         if (response?.error) {
           reject(new Error(response.error));
         } else if (response?.room) {
+          activeRoomIdRef.current = response.room.id;
           setRoom(response.room);
           setMessages(response.room.messages || []);
           resolve(response.room);
@@ -120,11 +140,14 @@ export function useSocket() {
         reject(new Error('Server took too long to connect. Please retry in a few seconds.'));
       }, 7000);
 
+      currentUserRef.current = user;
+
       socketRef.current.emit('room:join', { roomId, user }, (response) => {
         clearTimeout(timeoutId);
         if (response?.error) {
           reject(new Error(response.error));
         } else if (response?.room) {
+          activeRoomIdRef.current = response.room.id;
           setRoom(response.room);
           setMessages(response.room.messages || []);
           resolve(response.room);
@@ -137,6 +160,8 @@ export function useSocket() {
 
   const leaveRoom = useCallback((roomId) => {
     return new Promise((resolve) => {
+      activeRoomIdRef.current = null;
+      currentUserRef.current = null;
       if (socketRef.current) {
         socketRef.current.emit('room:leave', { roomId }, () => {
           setRoom(null);

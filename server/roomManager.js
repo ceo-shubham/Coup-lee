@@ -76,6 +76,22 @@ class RoomManager {
       return { error: 'Room not found. Please check the 6-digit code.' };
     }
 
+    // Check if user is reconnecting with a new socketId (replace old socket entry)
+    let isCreator = false;
+    for (const [oldSocketId, existingEntry] of room.users.entries()) {
+      if (
+        (user.id && existingEntry.user?.id === user.id) ||
+        (user.email && existingEntry.user?.email === user.email) ||
+        (user.name && existingEntry.user?.name === user.name)
+      ) {
+        isCreator = existingEntry.isCreator;
+        room.users.delete(oldSocketId);
+        this.userToRoom.delete(oldSocketId);
+        console.log(`[RoomManager] Seamlessly reconnected user ${user.name} (old socket: ${oldSocketId} -> new: ${socketId})`);
+        break;
+      }
+    }
+
     // Maximum 5 people (ideal for couple 2-3 people)
     if (room.users.size >= 5) {
       return { error: 'Room is full (maximum capacity reached).' };
@@ -90,7 +106,7 @@ class RoomManager {
         avatar: user.avatar || '',
       },
       joinedAt: Date.now(),
-      isCreator: false,
+      isCreator,
     });
 
     this.userToRoom.set(socketId, roomId);
@@ -120,15 +136,15 @@ class RoomManager {
 
     console.log(`[RoomManager] User left room ${roomId}. Remaining: ${room.users.size}`);
 
-    // If room is completely empty, schedule immediate cleanup
+    // If room is completely empty, schedule 2-minute grace period before purging
     if (room.users.size === 0) {
-      console.log(`[RoomManager] Room ${roomId} is empty. Scheduling file & room deletion.`);
+      console.log(`[RoomManager] Room ${roomId} is empty. Scheduling file & room deletion (2 min grace period).`);
       const timeoutId = setTimeout(async () => {
         await cleanupRoomFiles(roomId);
         this.rooms.delete(roomId);
         this.cleanupTimeouts.delete(roomId);
         console.log(`[RoomManager] Room ${roomId} and all its uploaded files completely purged.`);
-      }, 15000); // 15 second grace period in case of accidental refresh
+      }, 120000); // 2 minute grace period for mobile app minimize / lock screen
 
       this.cleanupTimeouts.set(roomId, timeoutId);
     }

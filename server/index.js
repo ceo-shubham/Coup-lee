@@ -197,6 +197,9 @@ if (fs.existsSync(clientDistPath)) {
   });
 }
 
+// Track pending disconnect timeouts for mobile grace periods
+const disconnectGraceTimers = new Map();
+
 // Socket.io Real-time Event Handling
 io.on('connection', (socket) => {
   console.log(`[Socket] Connected: ${socket.id}`);
@@ -239,8 +242,12 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Leave room
+  // Explicit Leave room
   socket.on('room:leave', ({ roomId }, callback) => {
+    if (disconnectGraceTimers.has(socket.id)) {
+      clearTimeout(disconnectGraceTimers.get(socket.id));
+      disconnectGraceTimers.delete(socket.id);
+    }
     const result = roomManager.leaveRoom(socket.id);
     if (result) {
       socket.leave(result.roomId);
@@ -328,16 +335,25 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Disconnect
-  socket.on('disconnect', () => {
-    const result = roomManager.leaveRoom(socket.id);
-    if (result) {
-      socket.to(result.roomId).emit('room:user_left', {
-        user: result.departingUser,
-        room: result.room,
-      });
+  // Disconnect with grace period for mobile app switching / lock screen
+  socket.on('disconnect', (reason) => {
+    console.log(`[Socket] Disconnected: ${socket.id} (${reason}). Starting 45s grace period.`);
+    const currentSocketId = socket.id;
+    const roomId = roomManager.userToRoom.get(currentSocketId);
+
+    if (roomId) {
+      const graceTimer = setTimeout(() => {
+        disconnectGraceTimers.delete(currentSocketId);
+        const result = roomManager.leaveRoom(currentSocketId);
+        if (result) {
+          socket.to(result.roomId).emit('room:user_left', {
+            user: result.departingUser,
+            room: result.room,
+          });
+        }
+      }, 45000);
+      disconnectGraceTimers.set(currentSocketId, graceTimer);
     }
-    console.log(`[Socket] Disconnected: ${socket.id}`);
   });
 });
 

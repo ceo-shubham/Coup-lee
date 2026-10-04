@@ -209,21 +209,21 @@ export function App() {
               isMuted={isMuted}
             />
 
-            <div className="flex items-center justify-between w-full px-2 max-w-2xl">
+            <div className="flex items-center justify-between w-full px-2 max-w-sm sm:max-w-md">
               <div className="min-w-0 mr-2">
-                <h3 className="text-sm sm:text-base font-bold text-white truncate max-w-xs sm:max-w-md">
+                <h3 className="text-xs sm:text-sm font-bold text-white truncate max-w-xs">
                   {currentTrack.title}
                 </h3>
-                <p className="text-[11px] sm:text-xs text-rose-300/80 truncate">
+                <p className="text-[10px] sm:text-xs text-rose-300/80 truncate">
                   {currentTrack.artist} • Added by {currentTrack.addedBy?.name || 'Partner'}
                 </p>
               </div>
 
               <button
                 onClick={() => setShowVideo(false)}
-                className="px-2.5 py-1 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-[11px] text-rose-200 transition-colors flex-shrink-0"
+                className="px-2.5 py-1 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-[10px] sm:text-xs text-rose-200 transition-colors flex-shrink-0"
               >
-                🎵 Switch to Vinyl
+                🎵 Switch to CD
               </button>
             </div>
           </div>

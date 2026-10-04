@@ -158,8 +158,9 @@ export function AddMediaModal({ isOpen, onClose, onAddTrack, roomId, currentUser
             <h3 className="text-lg sm:text-xl font-bold text-white">Add Music / Video</h3>
           </div>
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-rose-900/50 text-rose-300 hover:text-white transition-colors"
+            onClick={() => !isUploading && onClose()}
+            disabled={isUploading}
+            className="p-1.5 rounded-full hover:bg-rose-900/50 text-rose-300 hover:text-white transition-colors disabled:opacity-40"
           >
             <X className="w-5 h-5" />
           </button>
