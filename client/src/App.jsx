@@ -176,6 +176,21 @@ export function App() {
     }
   }, [isAuthenticated, Boolean(room)]);
 
+  // Prevent mobile elastic bounce / pull-down scroll while inside the room
+  useEffect(() => {
+    const preventBounce = (e) => {
+      // Allow scroll inside drawers / modals with overflow-y-auto, block on main background
+      if (!e.target.closest('.overflow-y-auto, [data-scrollable="true"]')) {
+        // If not interacting with sliders, buttons, inputs
+        if (!e.target.closest('input[type="range"], button, a, input, textarea')) {
+          e.preventDefault();
+        }
+      }
+    };
+    document.addEventListener('touchmove', preventBounce, { passive: false });
+    return () => document.removeEventListener('touchmove', preventBounce);
+  }, []);
+
   // 1. If not authenticated, render Login screen
   if (!isAuthenticated) {
     return <AuthScreen />;
@@ -194,9 +209,9 @@ export function App() {
     );
   }
 
-  // 3. In-Room Main Experience
+  // 3. In-Room Main Experience (Strict 100dvh Locked Single Frame)
   return (
-    <div className="h-screen h-[100dvh] max-h-[100dvh] flex flex-col justify-between relative overflow-hidden select-none">
+    <div className="fixed inset-0 w-full h-[100dvh] max-h-[100dvh] flex flex-col justify-between overflow-hidden select-none overscroll-none touch-none">
       {/* Floating Hearts & Confetti FX */}
       <FloatingHearts reactions={reactions} />
 

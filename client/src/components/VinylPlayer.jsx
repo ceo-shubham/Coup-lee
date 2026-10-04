@@ -11,7 +11,7 @@ export function VinylPlayer({
   const isYouTube = track?.type === 'youtube';
 
   return (
-    <div className="flex flex-col items-center justify-center relative w-full py-1 sm:py-2 select-none">
+    <div className="flex flex-col items-center justify-center relative w-full py-1 select-none touch-auto">
       {/* Vinyl / CD Container - Compact preview disc */}
       <div className="relative group flex items-center justify-center">
         {/* Glowing aura behind disc */}

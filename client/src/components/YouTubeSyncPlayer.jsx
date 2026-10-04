@@ -248,7 +248,7 @@ export function YouTubeSyncPlayer({
   }, [playback?.isPlaying, onTimeUpdate]);
 
   return (
-    <div className="relative w-full aspect-video max-h-[24vh] max-w-sm sm:max-w-md mx-auto rounded-2xl overflow-hidden glass-panel-glow border border-rose-500/30 shadow-xl bg-black">
+    <div className="relative w-full aspect-video max-h-[24vh] max-w-sm sm:max-w-md mx-auto rounded-2xl overflow-hidden glass-panel-glow border border-rose-500/30 shadow-xl bg-black touch-auto">
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Autoplay blocked fallback tap button */}

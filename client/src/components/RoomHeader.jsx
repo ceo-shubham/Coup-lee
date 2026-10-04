@@ -31,7 +31,7 @@ export function RoomHeader({ room, currentUser, onLeaveRoom, isWakeLocked }) {
   const isPartnerConnected = (room?.users?.length || 0) >= 2;
 
   return (
-    <header className="w-full glass-panel border-b border-rose-500/20 px-3.5 sm:px-6 py-2.5 sm:py-3 flex-shrink-0 z-40">
+    <header className="w-full glass-panel border-b border-rose-500/20 px-3 sm:px-6 py-2 sm:py-3 flex-shrink-0 z-40 touch-auto">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Branding & Numeric Code */}
         <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">

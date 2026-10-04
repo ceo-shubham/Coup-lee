@@ -5,11 +5,24 @@
 @layer base {
   html, body, #root {
     height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    -webkit-overflow-scrolling: auto;
   }
   body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    touch-action: manipulation;
     background: radial-gradient(circle at 50% 20%, #2a0815 0%, #15030b 50%, #080104 100%);
     background-attachment: fixed;
     color: #fdf2f4;

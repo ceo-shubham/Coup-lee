@@ -51,9 +51,9 @@ export function MediaControls({
   };
 
   return (
-    <div className="w-full glass-panel-glow border-t border-rose-500/25 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-t-3xl max-w-4xl mx-auto select-none">
+    <div className="w-full glass-panel-glow border-t border-rose-500/25 px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-t-3xl max-w-4xl mx-auto select-none touch-auto">
       {/* Progress Scrubber Bar */}
-      <div className="w-full flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+      <div className="w-full flex items-center gap-2.5 sm:gap-3 mb-1.5 sm:mb-3">
         <span className="text-[11px] sm:text-xs font-mono text-rose-300/80 w-8 sm:w-10 text-right">
           {formatTime(currentDisplayTime)}
         </span>
