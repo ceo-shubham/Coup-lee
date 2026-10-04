@@ -203,8 +203,8 @@ export function App() {
     const preventBounce = (e) => {
       // Allow scroll inside drawers / modals with overflow-y-auto, block on main background
       if (!e.target.closest('.overflow-y-auto, [data-scrollable="true"]')) {
-        // If not interacting with sliders, buttons, inputs
-        if (!e.target.closest('input[type="range"], button, a, input, textarea')) {
+        // If not interacting with sliders, buttons, inputs, interactive floating hearts
+        if (!e.target.closest('input[type="range"], button, a, input, textarea, [data-interactive="true"]')) {
           e.preventDefault();
         }
       }
